@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>صندوقي</title>
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="صندوقي">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f5f2; --card: #ffffff; --line: #e3e3dd; --text: #1b1c1f; --muted: #6d6f76;
+    --accent: #2f6df6; --accent-text: #ffffff; --danger: #d23b3b; --chip: #eef1f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --card: #181b21; --line: #262a32; --text: #eceef2; --muted: #8b909b;
+      --accent: #5b8cff; --accent-text: #0f1115; --danger: #ff6b6b; --chip: #1f2530;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 16px/1.6 "IBM Plex Sans Arabic", system-ui, sans-serif;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+  .hidden { display: none !important; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 12px; }
+  input, textarea { font: inherit; font-size: 16px; color: var(--text); }
+
+  header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 16px; }
+  header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  .usage { font-size: 13px; color: var(--muted); }
+  .ghost { background: transparent; color: var(--muted); padding: 6px 10px; }
+  .ghost:hover { color: var(--text); }
+
+  .composer {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 10px; position: sticky; top: calc(env(safe-area-inset-top) + 8px); z-index: 5;
+  }
+  .composer textarea {
+    width: 100%; border: 0; outline: 0; resize: none; background: transparent;
+    min-height: 44px; max-height: 180px; padding: 6px 8px;
+  }
+  .composer .row { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+  .btn { background: var(--accent); color: var(--accent-text); padding: 10px 18px; font-weight: 600; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .attach { background: var(--chip); color: var(--text); padding: 10px 14px; }
+  .hint { font-size: 12px; color: var(--muted); }
+
+  .status { text-align: center; color: var(--muted); font-size: 14px; padding: 10px 0 0; min-height: 30px; }
+  .list { list-style: none; margin: 8px 0 40px; padding: 0; display: grid; gap: 10px; }
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+  .meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .from { background: var(--chip); padding: 1px 8px; border-radius: 99px; }
+  .body { white-space: pre-wrap; word-break: break-word; }
+  .body a { color: var(--accent); }
+  .file { display: flex; align-items: center; gap: 12px; }
+  .file .ic { width: 44px; height: 44px; border-radius: 10px; background: var(--chip); display: grid; place-items: center; font-size: 20px; flex: none; }
+  .file .nm { font-weight: 500; word-break: break-all; }
+  .file .sz { font-size: 13px; color: var(--muted); }
+  .thumb { display: block; width: 100%; max-height: 360px; object-fit: contain; border-radius: 10px; background: var(--chip); margin-bottom: 8px; }
+  .actions { display: flex; gap: 6px; margin-top: 10px; }
+  .actions button { background: var(--chip); color: var(--text); padding: 7px 14px; font-size: 14px; }
+  .actions .del { color: var(--danger); margin-inline-start: auto; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-top: 12vh; }
+  .card h1 { margin: 0 0 4px; font-size: 24px; }
+  .card p { color: var(--muted); margin: 0 0 20px; }
+  .card input { width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); margin-bottom: 10px; outline: 0; }
+  .card input:focus { border-color: var(--accent); }
+  .card .btn { width: 100%; padding: 12px; }
+  .err { color: var(--danger); font-size: 14px; min-height: 22px; margin-top: 8px; }
+
+  .drop {
+    position: fixed; inset: 0; background: color-mix(in srgb, var(--accent) 18%, transparent);
+    border: 3px dashed var(--accent); display: grid; place-items: center; font-size: 22px; font-weight: 600; z-index: 20; pointer-events: none;
+  }
+  .toast {
+    position: fixed; bottom: calc(env(safe-area-inset-bottom) + 20px); left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 8px 16px; border-radius: 99px; font-size: 14px; z-index: 30;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="setup" class="card hidden">
+    <h1>صندوقي</h1>
+    <p>باقي تحط بيانات Supabase في ملف config.js.</p>
+  </section>
+
+  <section id="login" class="card hidden">
+    <h1>صندوقي</h1>
+    <p id="loginMsg">سجّل دخول مرة وحدة في كل جهاز.</p>
+    <form id="loginForm">
+      <input id="email" type="email" placeholder="الإيميل" autocomplete="username" required>
+      <input id="password" type="password" placeholder="كلمة المرور" autocomplete="current-password" minlength="6" required>
+      <button class="btn" id="loginBtn" type="submit">دخول</button>
+      <button class="ghost" id="signupBtn" type="button" style="width:100%;margin-top:6px">أول مرة؟ سوّ حسابك</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </section>
+
+  <section id="app" class="hidden">
+    <header>
+      <div>
+        <h1>صندوقي</h1>
+        <div class="usage" id="usage"></div>
+      </div>
+      <button class="ghost" id="logout">خروج</button>
+    </header>
+
+    <div class="composer">
+      <textarea id="text" rows="1" placeholder="اكتب أو الصق نص أو رابط..."></textarea>
+      <div class="row">
+        <button class="attach" id="attachBtn" type="button">＋ صور وملفات</button>
+        <span class="hint" id="hint"></span>
+        <button class="btn" id="send" type="button" disabled>أرسل</button>
+      </div>
+      <input id="fileInput" type="file" multiple hidden>
+    </div>
+
+    <div class="status" id="status"></div>
+    <ul class="list" id="list"></ul>
+  </section>
+</div>
+
+<div class="drop hidden" id="drop">أفلت الملفات هنا</div>
+<div class="toast hidden" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const cfg = window.SANDUQ_CONFIG || {};
+const BUCKET = "files";
+const FREE_BYTES = 1024 ** 3;
+const isPhone = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const DEVICE = isPhone ? "الجوال" : "اللابتوب";
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+if (!cfg.url || !cfg.anonKey) {
+  $("setup").classList.remove("hidden");
+  throw new Error("config.js فاضي");
+}
+
+const sb = supabase.createClient(cfg.url, cfg.anonKey);
+let user = null;
+let channel = null;
+
+// ---------- واجهة عامة ----------
+function show(id) {
+  ["setup", "login", "app"].forEach((s) => $(s).classList.toggle("hidden", s !== id));
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add("hidden"), 2200);
+}
+
+function setStatus(msg) { $("status").textContent = msg || ""; }
+
+function esc(s) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function linkify(s) {
+  return esc(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + " B";
+  if (b < 1024 ** 2) return (b / 1024).toFixed(0) + " KB";
+  if (b < 1024 ** 3) return (b / 1024 ** 2).toFixed(1) + " MB";
+  return (b / 1024 ** 3).toFixed(2) + " GB";
+}
+
+const rtf = new Intl.RelativeTimeFormat("ar", { numeric: "auto" });
+function fmtTime(iso) {
+  const sec = Math.round((new Date(iso) - Date.now()) / 1000);
+  const abs = Math.abs(sec);
+  if (abs < 60) return "الحين";
+  if (abs < 3600) return rtf.format(Math.round(sec / 60), "minute");
+  if (abs < 86400) return rtf.format(Math.round(sec / 3600), "hour");
+  if (abs < 86400 * 7) return rtf.format(Math.round(sec / 86400), "day");
+  return new Date(iso).toLocaleDateString("ar-SA-u-ca-gregory", { day: "numeric", month: "short" });
+}
+
+function fileIcon(mime = "") {
+  if (mime.startsWith("image/")) return "🖼️";
+  if (mime.startsWith("video/")) return "🎬";
+  if (mime.startsWith("audio/")) return "🎵";
+  if (mime.includes("pdf")) return "📄";
+  if (mime.includes("zip") || mime.includes("compressed")) return "🗜️";
+  return "📎";
+}
+
+// ---------- الدخول ----------
+const creds = () => ({ email: $("email").value.trim(), password: $("password").value });
+
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("loginErr").textContent = "";
+  $("loginBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword(creds());
+  $("loginBtn").disabled = false;
+  if (!error) return;
+  $("loginErr").textContent = /confirm/i.test(error.message)
+    ? "أكّد إيميلك أول من الرابط اللي وصلك"
+    : "الإيميل أو كلمة المرور غلط";
+});
+
+$("signupBtn").addEventListener("click", async () => {
+  if (!$("loginForm").reportValidity()) return;
+  $("loginErr").textContent = "";
+  const { data, error } = await sb.auth.signUp({ ...creds(), options: { emailRedirectTo: location.origin + location.pathname } });
+  if (error) { $("loginErr").textContent = "ما قدرت أسوي الحساب"; return; }
+  if (!data.session) $("loginMsg").textContent = "وصلك رابط تأكيد على إيميلك (شيّك البريد المزعج). اضغطه، وارجع هنا واضغط دخول.";
+});
+
+$("logout").addEventListener("click", () => sb.auth.signOut());
+
+sb.auth.onAuthStateChange((_event, session) => {
+  const next = session?.user || null;
+  if (next?.id === user?.id) return;
+  user = next;
+  if (user) start(); else stop();
+});
+
+function start() {
+  show("app");
+  load();
+  channel = sb
+    .channel("items")
+    .on("postgres_changes", { event: "*", schema: "public", table: "items" }, () => load())
+    .subscribe();
+}
+
+function stop() {
+  if (channel) sb.removeChannel(channel);
+  channel = null;
+  $("list").innerHTML = "";
+  show("login");
+}
+
+// لما ترجع للتطبيق بعد ما كان بالخلفية (الآيفون يوقف الاتصال اللحظي)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && user) load();
+});
+
+// ---------- عرض العناصر ----------
+let items = [];
+let loading = false, again = false;
+
+async function load() {
+  if (loading) { again = true; return; }
+  loading = true;
+  const { data, error } = await sb.from("items").select("*").order("created_at", { ascending: false }).limit(300);
+  loading = false;
+  if (error) { setStatus("ما قدرت أجيب العناصر، تأكد من النت"); return; }
+  items = data;
+  await render();
+  if (again) { again = false; load(); }
+}
+
+async function render() {
+  const list = $("list");
+  const used = items.reduce((s, it) => s + (it.file_size || 0), 0);
+  $("usage").textContent = `${items.length} عنصر · ${fmtSize(used)} من 1 GB`;
+
+  if (!items.length) {
+    list.innerHTML = '<li class="empty">الصندوق فاضي. حط أول شي من فوق.</li>';
+    return;
+  }
+
+  // روابط مؤقتة لمعاينة الصور
+  const imgPaths = items.filter((i) => i.kind === "file" && i.mime?.startsWith("image/")).map((i) => i.file_path);
+  const thumbs = {};
+  if (imgPaths.length) {
+    const { data } = await sb.storage.from(BUCKET).createSignedUrls(imgPaths, 3600);
+    (data || []).forEach((d) => { if (d.signedUrl) thumbs[d.path] = d.signedUrl; });
+  }
+
+  list.innerHTML = items.map((it) => {
+    const meta = `<div class="meta"><span class="from">من ${esc(it.device || "")}</span><span>${fmtTime(it.created_at)}</span></div>`;
+    if (it.kind === "text") {
+      return `<li class="item">${meta}<div class="body">${linkify(it.body || "")}</div>
+        <div class="actions"><button data-act="copy" data-id="${it.id}">نسخ</button><button class="del" data-act="del" data-id="${it.id}">حذف</button></div></li>`;
+    }
+    const thumb = thumbs[it.file_path] ? `<img class="thumb" loading="lazy" src="${thumbs[it.file_path]}" alt="">` : "";
+    return `<li class="item">${meta}${thumb}
+      <div class="file"><div class="ic">${fileIcon(it.mime)}</div><div><div class="nm">${esc(it.file_name || "ملف")}</div><div class="sz">${fmtSize(it.file_size || 0)}</div></div></div>
+      <div class="actions"><button data-act="open" data-id="${it.id}">فتح / تنزيل</button><button class="del" data-act="del" data-id="${it.id}">حذف</button></div></li>`;
+  }).join("");
+}
+
+$("list").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const it = items.find((i) => i.id === b.dataset.id);
+  if (!it) return;
+
+  if (b.dataset.act === "copy") {
+    try { await navigator.clipboard.writeText(it.body || ""); toast("انسخ"); }
+    catch { toast("ما قدرت أنسخ"); }
+  }
+
+  if (b.dataset.act === "open") {
+    // نفتح النافذة قبل الانتظار عشان الآيفون ما يحجبها
+    const win = window.open("", "_blank");
+    const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(it.file_path, 600, { download: isPhone ? false : it.file_name });
+    if (error || !data) { win?.close(); toast("ما قدرت أفتح الملف"); return; }
+    if (win) win.location = data.signedUrl; else location.href = data.signedUrl;
+  }
+
+  if (b.dataset.act === "del") {
+    if (!confirm("أحذفه من الجهازين؟")) return;
+    if (it.file_path) await sb.storage.from(BUCKET).remove([it.file_path]);
+    const { error } = await sb.from("items").delete().eq("id", it.id);
+    if (error) toast("ما انحذف");
+    else { items = items.filter((i) => i.id !== it.id); render(); }
+  }
+});
+
+// ---------- الإرسال ----------
+const textEl = $("text");
+
+function autoGrow() {
+  textEl.style.height = "auto";
+  textEl.style.height = Math.min(textEl.scrollHeight, 180) + "px";
+  $("send").disabled = !textEl.value.trim();
+}
+textEl.addEventListener("input", autoGrow);
+
+textEl.addEventListener("keydown", (e) => {
+  if (!isPhone && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendText(); }
+});
+$("send").addEventListener("click", sendText);
+if (!isPhone) $("hint").textContent = "Enter للإرسال · تقدر تلصق صورة أو تسحب ملف";
+
+async function sendText() {
+  const body = textEl.value.trim();
+  if (!body) return;
+  $("send").disabled = true;
+  const { error } = await sb.from("items").insert({ kind: "text", body, device: DEVICE });
+  if (error) { toast("ما انرسل، جرّب مرة ثانية"); $("send").disabled = false; return; }
+  textEl.value = "";
+  autoGrow();
+  load();
+}
+
+$("attachBtn").addEventListener("click", () => $("fileInput").click());
+$("fileInput").addEventListener("change", (e) => {
+  uploadFiles([...e.target.files]);
+  e.target.value = "";
+});
+
+async function uploadFiles(files) {
+  if (!files.length) return;
+  const tooBig = files.filter((f) => f.size > 50 * 1024 ** 2);
+  if (tooBig.length) toast(`${tooBig.length} ملف أكبر من 50MB ما يترفع`);
+  files = files.filter((f) => f.size <= 50 * 1024 ** 2);
+
+  let done = 0, failed = 0;
+  for (const f of files) {
+    setStatus(`جاري الرفع ${done + 1} من ${files.length}...`);
+    const ext = (f.name.match(/\.[a-z0-9]{1,8}$/i) || [""])[0].toLowerCase();
+    // اسم المسار إنجليزي، والاسم الأصلي (حتى لو عربي) ينحفظ في الجدول
+    const path = `${user.id}/${crypto.randomUUID()}${ext}`;
+    const up = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type || "application/octet-stream" });
+    if (up.error) { failed++; continue; }
+    const { error } = await sb.from("items").insert({
+      kind: "file", file_path: path, file_name: f.name || "صورة" + ext,
+      file_size: f.size, mime: f.type || "", device: DEVICE,
+    });
+    if (error) { failed++; await sb.storage.from(BUCKET).remove([path]); continue; }
+    done++;
+  }
+  setStatus(failed ? `${failed} ما انرفع` : "");
+  if (done) toast(done === 1 ? "انرفع" : `انرفع ${done}`);
+  load();
+}
+
+// لصق صورة من الكيبورد
+document.addEventListener("paste", (e) => {
+  if (!user) return;
+  const files = [...(e.clipboardData?.files || [])];
+  if (files.length) { e.preventDefault(); uploadFiles(files); }
+});
+
+// سحب وإفلات على اللابتوب
+let dragDepth = 0;
+window.addEventListener("dragenter", (e) => {
+  if (!user || !e.dataTransfer?.types.includes("Files")) return;
+  dragDepth++; $("drop").classList.remove("hidden");
+});
+window.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; $("drop").classList.add("hidden"); } });
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dragDepth = 0; $("drop").classList.add("hidden");
+  if (user) uploadFiles([...(e.dataTransfer?.files || [])]);
+});
+
+// الوقت النسبي يتحدث كل دقيقة
+setInterval(() => { if (user && items.length) render(); }, 60000);
+</script>
+</body>
+</html>
