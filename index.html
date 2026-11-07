@@ -237,9 +237,11 @@ $("signupBtn").addEventListener("click", async () => {
 
 $("logout").addEventListener("click", () => sb.auth.signOut());
 
+let authReady = false;
 sb.auth.onAuthStateChange((_event, session) => {
   const next = session?.user || null;
-  if (next?.id === user?.id) return;
+  if (authReady && next?.id === user?.id) return;
+  authReady = true;
   user = next;
   if (user) start(); else stop();
 });
